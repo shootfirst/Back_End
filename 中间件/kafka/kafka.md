@@ -4,24 +4,34 @@ kafka整体架构：
 
 ![](kafka_infra.jpg)
 
+https://mp.weixin.qq.com/s/AtGyvCRT5cv5jipQxbNPZg
+
+https://mp.weixin.qq.com/s?__biz=Mzg3MTcxMDgxNA==&mid=2247488847&idx=1&sn=fe2dace4ebf39001062fa331711606ba&chksm=cefb3c7ef98cb5689c91b02edb345cc75751ae7e2daf27d8de9a47f9ecc3eedaf3551eead037&scene=178&cur_album_id=2147575846151290880#rd
+
+https://zhuanlan.zhihu.com/p/605232382
+
+https://mp.weixin.qq.com/s/47AKpLzRHhbTUUvNbVxv7w
+
+https://zhuanlan.zhihu.com/p/148131411
+
+https://mp.weixin.qq.com/s/kmRnukY5P2GuvaoctyBHQA
+
+https://zhuanlan.zhihu.com/p/78335525
+
+https://segmentfault.com/a/1190000040773392
+
 
 ### Producer
 
-https://mp.weixin.qq.com/s/AtGyvCRT5cv5jipQxbNPZg
-
-Producer将客户端的请求打包封装发送到 kafka 集群的某个 Topic 的某个分区上
+Producer将客户端的请求打包封装发送到 kafka 集群的`指定Topic`的`指定partition`上
 
 #### 初始化
 
-+ 设置分区器、序列化器、拦截器
-
-+ 参数：设置重试时间、最大的消息、缓存大小、压缩格式等
++ 分区器、序列化器、拦截器
 
 + 缓冲区：初始化缓冲区指定为32M
 
 + 元数据（Kafka集群的信息）：初始化、定时更新（sender线程发送获取集群元数据）
-
-+ NetworkClient：规定网络链接个数，网络连接最大空闲时间
 
 + 创建sender线程（负责发送消息和获取元数据），将Sender设置为守护线程并启动（重试次数，ack策略）
 
@@ -59,18 +69,12 @@ Producer将客户端的请求打包封装发送到 kafka 集群的某个 Topic �
 
 否则由 JVM GC 来回收 ByteBuffer 并增加 nonPooledAvailableMemory。
 
-当有 ByteBuffer 回收了，唤醒 waiters 中的第一个阻塞线程。
-
 
 
 
 ### Broker
 
 #### 单个Broker
-
-https://mp.weixin.qq.com/s?__biz=Mzg3MTcxMDgxNA==&mid=2247488847&idx=1&sn=fe2dace4ebf39001062fa331711606ba&chksm=cefb3c7ef98cb5689c91b02edb345cc75751ae7e2daf27d8de9a47f9ecc3eedaf3551eead037&scene=178&cur_album_id=2147575846151290880#rd
-
-##### 延迟任务时间轮
 
 ##### 高并发网络
 
@@ -162,24 +166,26 @@ leader epoch：Leader 副本在该 Epoch 值上写入的首条消息的位移。
 
 ### Consumer
 
-https://mp.weixin.qq.com/s/47AKpLzRHhbTUUvNbVxv7w
+pull与push
 
-
-#### Consumer初始化和消费流程
-
-采用poll
-
-初始化：
-
-+ 设置consumer参数
+#### Consumer消费流程
 
 + 订阅subscribe topic（不止订阅一个）
 
-+ 循环定时调用poll获取消息并且处理
++ 循环定时调用poll拉取消息消费
 
-消费：
++ 提交消费位移
 
-![](consume_process.png)
+
+#### 消费者协调器coordinator
+
+每个Broker在启动的时候都会启动一个该服务，存储对应Group相关元数据。将其消费offset存储在内置Topic(__consumer_offsets)
+
+##### 功能
+
++ 负责存储其对应消费者组提交的offset，存储项为：格式为 <Group ID，主题名，分区号 > offset，配置了配置了compact策略去压缩
+
++ 负责选出一个消费者leader负责分区策略制定，在partition和消费者组变化的时候进行重分配
 
 
 #### 消费者组
@@ -192,14 +198,9 @@ Consumer Group 是 Kafka 提供的`横向扩展`且具有容错性的消费者�
 
 + 每个 Consumer Group 拥有一个公共且唯一的 Group ID
 
++ 消费者组内的所有成员一起订阅某个主题的所有分区
+
 + Consumer Group 在消费 Topic 的时候，Topic 的每个 Partition 只能分配给组内的某个 Consumer，只要被任何 Consumer 消费一次, 那么这条数据就可以认为被当前 Consumer Group 消费成功
-
-##### Partition分配
-
-##### 消费者组重分配
-
-
-#### 消费者消费进度offset
 
 ##### 自动提交
 
@@ -215,33 +216,18 @@ Consumer Group 是 Kafka 提供的`横向扩展`且具有容错性的消费者�
 
 + 混合提交
 
-##### 存储
-
-格式为 <Group ID，主题名，分区号 > offset
-
-存储在特殊的topic中（也有分区）
 
 
 
 ### 性能
 
-https://mp.weixin.qq.com/s/kmRnukY5P2GuvaoctyBHQA
-
 ##### 顺序写磁盘和OS cache
 
 ##### 零拷贝技术
 
-从 Kafka 的磁盘文件读取数据然后通过网络发送给下游的消费者
-
 使用sendfile系统调用从磁盘直接发送到网卡，不经过用户态
 
-mmap
-https://zhuanlan.zhihu.com/p/78335525
-##### 压缩传输
-
-在 Kafka 中, 压缩可能会发生在两个地方: 生产者端和Broker端,
-
-一句话总结下压缩和解压缩, 即 Producer 端压缩, Broker 端保持, Consumer 端解压缩
+mmap直接可以在内存读取文件
 
 ##### 内存池与批处理
 
@@ -255,20 +241,3 @@ https://zhuanlan.zhihu.com/p/78335525
 
 参考上面
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-https://segmentfault.com/a/1190000040773392
