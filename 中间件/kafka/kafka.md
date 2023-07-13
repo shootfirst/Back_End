@@ -1,5 +1,7 @@
 # Kafka
 
+## Kafka原理
+
 kafka整体架构：
 
 ![](kafka_infra.jpg)
@@ -19,6 +21,8 @@ https://mp.weixin.qq.com/s/kmRnukY5P2GuvaoctyBHQA
 https://zhuanlan.zhihu.com/p/78335525
 
 https://segmentfault.com/a/1190000040773392
+
+https://juejin.cn/post/7004070620996567048
 
 
 ### Producer
@@ -104,6 +108,8 @@ Producer将客户端的请求打包封装发送到 kafka 集群的`指定Topic`�
 + index：offset to position
 
 + timeindex：timesnap to offset
+
+存储在log文件中的消息实体：key，value，时间戳，长度，offse
 
 [索引的冷区与热区](https://www.modb.pro/db/88205)
 
@@ -240,4 +246,9 @@ mmap直接可以在内存读取文件
 ##### 索引
 
 参考上面
+
+
+## Kafka应用
+
+### 分区数设定
 

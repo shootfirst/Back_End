@@ -14,6 +14,8 @@ IDL
 
 最普遍的是二进制协议BinaryProtocol
 
+二进制协议与文本协议
+
 ### 传输协议
 
 TSocket套接字传输
